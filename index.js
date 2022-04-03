@@ -1,36 +1,59 @@
-import {select, json, tsv, geoPath, geoNaturalEarth1, zoom, event} from 'd3';
-import { feature } from 'topojson';
+import {
+    select,
+    geoPath,
+    geoNaturalEarth1,
+    zoom,
+    event,
+    scaleOrdinal,
+    schemeSpectral
+  } from 'd3';
+  import { loadAndProcessData } from './loadAndProcessData';
+  import { legend } from './legend';
   
-const svg = select('svg');
+  const svg = select('svg');
   
-const projection = geoNaturalEarth1();
-const pathGenerator = geoPath().projection(projection);
+  const projection = geoNaturalEarth1();
+  const pathGenerator = geoPath().projection(projection);
   
-const g = svg.append('g');
+  const g = svg.append('g');
   
-g.append('path')
-    .attr('class', 'sphere')
-    .attr('d', pathGenerator({type: 'Sphere'}));
+  const legendG = svg.append('g')
+      .attr('transform', `translate(40,310)`);
   
-svg.call(zoom().on('zoom', () => {
+  g.append('path')
+      .attr('class', 'sphere')
+      .attr('d', pathGenerator({type: 'Sphere'}));
+  
+  svg.call(zoom().on('zoom', () => {
     g.attr('transform', event.transform);
-}));
+  }));
   
-Promise.all([
-    tsv('https://unpkg.com/world-atlas@1.1.4/world/50m.tsv'),
-    json('https://unpkg.com/world-atlas@1.1.4/world/50m.json')
-]).then(([tsvData, topoJSONdata]) => {
+  const colorScale = scaleOrdinal();
+  
+  // const colorValue = d => d.properties.income_grp;
+  const colorValue = d => d.properties.economy;
+  
+  loadData().then(countries => {
     
-const countryName = tsvData.reduce((accumulator, d) => {
-    accumulator[d.iso_n3] = d.name;
-    return accumulator;
-}, {});
-
-const countries = feature(topoJSONdata, topoJSONdata.objects.countries);
-g.selectAll('path').data(countries.features)
-    .enter().append('path')
-    .attr('class', 'country')
-    .attr('d', pathGenerator)
-    .append('title')
-    .text(d => countryName[d.id]);
-});
+    colorScale
+      .domain(countries.features.map(colorValue))
+      .domain(colorScale.domain().sort().reverse())
+      .range(schemeSpectral[colorScale.domain().length]);
+    
+    legendG.call(legend, {
+      colorScale,
+      circleRadius: 8,
+      spacing: 20,
+    //   textOffset: 12,
+      backgroundRectWidth: 100
+    });
+    
+    g.selectAll('path').data(countries.features)
+      .enter().append('path')
+        .attr('class', 'country')
+        .attr('d', pathGenerator)
+        .attr('fill', d => colorScale(colorValue(d)))
+      .append('title')
+        .text(d => d.properties.name + ': ' + colorValue(d));
+    
+  });
