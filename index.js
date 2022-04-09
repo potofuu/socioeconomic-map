@@ -5,7 +5,8 @@ import {
     zoom,
     event,
     scaleOrdinal,
-    schemeSpectral
+    schemeSpectral,
+    schemeRdYlBu
   } from 'd3';
   import { loadAndProcessData } from './loadAndProcessData';
   import { legend } from './legend';
@@ -37,8 +38,8 @@ import {
     
     colorScale
       .domain(countries.features.map(colorValue))
-      .domain(colorScale.domain().sort().reverse())
-      .range(schemeSpectral[colorScale.domain().length]);
+      .domain(colorScale.domain())
+      .range(schemeRdYlBu[colorScale.domain().length]);
     
     legendG.call(legend, {
       colorScale,

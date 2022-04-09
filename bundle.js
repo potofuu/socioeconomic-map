@@ -96,8 +96,8 @@
     
     colorScale
       .domain(countries.features.map(colorValue))
-      .domain(colorScale.domain().sort().reverse())
-      .range(d3.schemeSpectral[colorScale.domain().length]);
+      .domain(colorScale.domain())
+      .range(d3.schemeRdYlBu[colorScale.domain().length]);
     
     colorLegendG.call(colorLegend, {
       colorScale,
